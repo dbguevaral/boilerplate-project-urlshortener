@@ -1,13 +1,18 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const app = express();
+const bodyParser = require('body-parser');
+const dns = require('dns');
+const urlparser = require('url-parse');
+const urlArray = [];
+
+require('dotenv').config();
 
 // Basic Configuration
 const port = process.env.PORT || 3000;
 
 app.use(cors());
-
+app.use(bodyParser.urlencoded({extended: true}));
 app.use('/public', express.static(`${process.cwd()}/public`));
 
 app.get('/', function(req, res) {
@@ -23,6 +28,23 @@ app.listen(port, function() {
   console.log(`Listening on port ${port}`);
 });
 
-//this is a super test
+app.post('/api/shorturl', (req, res) => {
+  const { url } = req.body
+  const parsed = urlparser(url)
+  const short_url = urlArray.length + 23150;
+  
+  dns.lookup(parsed.hostname, (err) => {
+    if(err) return res.json({error: 'invalid url'})
+  })
 
-//this is another super test
+  urlArray.push({original_url: url, short_url})
+  res.json({original_url: url, short_url})
+})
+
+app.get('/api/shorturl/:short_url', (req, res) => {
+  const { short_url } = req.params;
+  const entry = urlArray.find(item => item.short_url == short_url)
+  
+  if(entry) return res.redirect(entry.original_url)
+  else return res.json({error: 'invalid url'})
+})

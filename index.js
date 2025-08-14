@@ -32,13 +32,20 @@ app.post('/api/shorturl', (req, res) => {
   const { url } = req.body
   const parsed = urlparser(url)
   const short_url = urlArray.length + 23150;
+
+  if(!['https:', 'http:'].includes(parsed.protocol) || !parsed.hostname){
+    return res.json({error: 'invalid url'})
+  }
   
   dns.lookup(parsed.hostname, (err) => {
     if(err) return res.json({error: 'invalid url'})
+    else{
+      urlArray.push({original_url: url, short_url})
+      res.json({original_url: url, short_url})
+    }
   })
 
-  urlArray.push({original_url: url, short_url})
-  res.json({original_url: url, short_url})
+  
 })
 
 app.get('/api/shorturl/:short_url', (req, res) => {
